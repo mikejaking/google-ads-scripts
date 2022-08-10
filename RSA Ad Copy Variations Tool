@@ -1,177 +1,207 @@
-
 // 1. Go to this spreadsheet -> https://docs.google.com/spreadsheets/d/1URcVq4dkh2wUoN5YplFWzJ-JAgKNeTltxZYRnOg5BAs/copy
 // 2. Create a copy of the spreadsheet that uses the same email address as your Google Ads account
 // 3. Replace the spreadsheet URL below with your url
+var SPREADSHEET_URL =
+  "https://docs.google.com/spreadsheets/d/1URcVq4dkh2wUoN5YplFWzJ-JAgKNeTltxZYRnOg5BAs/edit#gid=2058978021";
 
-var SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1URcVq4dkh2wUoN5YplFWzJ-JAgKNeTltxZYRnOg5BAs/edit#gid=2058978021";
+// Name of sheet to import data
 var SHEET_NAME = "All Ads";
-
 // Row index
 var sheetRow = 1;
-
 // Headers for each column
-var headerRows = [["Ad id", "Campaign", "Ad Group", "Ad type", "Labels", "Headline 1", "Headline 1 position", "Headline 2", 
-                    "Headline 2 position", "Headline 3", "Headline 3 position", "Headline 4", "Headline 4 position", 
-                    "Headline 5", "Headline 5 position", "Headline 6", "Headline 6 position", "Headline 7", 
-                    "Headline 7 position", "Headline 8", "Headline 8 position", "Headline 9", "Headline 9 position", 
-                    "Headline 10", "Headline 10 position", "Headline 11", "Headline 11 position", "Headline 12", 
-                    "Headline 12 position", "Headline 13", "Headline 13 position", "Headline 14", "Headline 14 position", 
-                    "Headline 15", "Headline 15 position", "Description 1", "Description 1 position", "Description 2", 
-                    "Description 2 position", "Description 3", "Description 3 position", "Description 4", 
-                    "Description 4 position", "Path 1", "Path 2", "Final URL", "Final mobile URL", "Tracking template"]];
- 
-function main(){
+var headerRows = [
+  ["Ad id", "Campaign", "Ad Group", "Ad type", "Labels", "Headline 1", "Headline 1 position",
+    "Headline 2", "Headline 2 position", "Headline 3", "Headline 3 position", "Headline 4",
+    "Headline 4 position", "Headline 5", "Headline 5 position", "Headline 6",
+    "Headline 6 position", "Headline 7", "Headline 7 position", "Headline 8",
+    "Headline 8 position", "Headline 9", "Headline 9 position", "Headline 10",
+    "Headline 10 position", "Headline 11", "Headline 11 position", "Headline 12",
+    "Headline 12 position", "Headline 13", "Headline 13 position", "Headline 14",
+    "Headline 14 position", "Headline 15", "Headline 15 position", "Description 1",
+    "Description 1 position", "Description 2", "Description 2 position", "Description 3",
+    "Description 3 position", "Description 4", "Description 4 position", "Path 1", "Path 2",
+    "Final URL", "Final mobile URL", "Tracking template", "AdStrengthInfo"
+  ]
+];
+
+function main() {
+  // Returns a cleared sheet ready for data to be imported
+  var sheet = getSpreadSheet();
   
-  // Returns a cleared sheet object
-  var sheet = getSheet();
-  
-  // Set the header rows
+  // Set the header rows of the spreadsheet
   importDataToSheet(sheet, headerRows, sheetRow++);
   
+  // Array to store all the ads in
+  // This array will be imported into the Google sheet
   var adsArray = [];
   
-  // Get all adgroups in the account
-  var adGroupIterator = AdsApp.adGroups()
-  .withCondition("campaign.name REGEXP_MATCH 'Paid Search.*'")
-  .get();
+  // Returns an ad performance report with ad strength
+  // Iterates through the data and stores everything in an object
+  var performanceReport = adPerformanceReport();
+  var adsObject = buildAdsObject(performanceReport);
   
+  // Get all adgroups in the account
   // Iterate through every adGroup that was returned
+  // Add them to the adsArray ready for import into the spreadsheetsheet
+  var adGroupIterator = getAdGroups();
   while (adGroupIterator.hasNext()) {
     var adGroup = adGroupIterator.next();
     
     // Get all the responsive search ads in the adGroup
-    var textAdsIterator = adGroup
-    .ads()
-    .withCondition("Type IN [RESPONSIVE_SEARCH_AD]")
-    .get();
+    var textAdsIterator = adGroup.ads()
+      .withCondition("Type IN [RESPONSIVE_SEARCH_AD]")
+      .get();
     
     // Iterate through every ad while there is another ad
-    while(textAdsIterator.hasNext()) {
+    while (textAdsIterator.hasNext()) {
       var ad = textAdsIterator.next();
       
       // Array to store a row of data. Each row is one ad
       var adCopyArray = [];
+      var adId = ad.getId();
       
-      // Push element to the adCopyArray
-      adCopyArray.push(ad.getId());
+      // Push ad element to the adCopyArray
+      // This is creating one row of data
+      adCopyArray.push(adId);
       adCopyArray.push(ad.getCampaign().getName());
       adCopyArray.push(ad.getAdGroup().getName());
       adCopyArray.push(ad.getType());
       adCopyArray.push(getLabel(ad));
       
-      // Returns ad
-      var responsiveTextAd = ad
-      .asType()
-      .responsiveSearchAd();
-
-      // Add each headline to the data row
-      var headlines = responsiveTextAd
-      .getHeadlines();
+      // Returns all responsiveSearchAds in the ad group
+      var responsiveTextAd = ad.asType()
+        .responsiveSearchAd();
       
+      // Add each headline to the adCopyArray data row
+      var headlines = responsiveTextAd.getHeadlines();
       for (var i = 0; i < 15; i++) {
-        adCopyArray.push(getHeadline(headlines[i]));
+        adCopyArray.push(getText(headlines[i]));
         adCopyArray.push(getPin(headlines[i]));
       }
       
       // Add each description to the data row
-      var descriptions = responsiveTextAd
-      .getDescriptions();
-          
+      var descriptions = responsiveTextAd.getDescriptions();
       for (var i = 0; i < 4; i++) {
-        adCopyArray.push(getDescription(descriptions[i]));
-        adCopyArray.push(getDescriptionPin(descriptions[i]));
+        adCopyArray.push(getText(descriptions[i]));
+        adCopyArray.push(getPin(descriptions[i]));
       }
-
+      
       // Push element to the adCopyArray
-      adCopyArray.push(responsiveTextAd.getPath1().toLowerCase());
-      adCopyArray.push(responsiveTextAd.getPath2().toLowerCase());
-      adCopyArray.push(responsiveTextAd.urls().getFinalUrl());
-      adCopyArray.push(responsiveTextAd.urls().getMobileFinalUrl());
-      adCopyArray.push(responsiveTextAd.urls().getTrackingTemplate());
+      adCopyArray.push(responsiveTextAd.getPath1()
+        .toLowerCase());
+      adCopyArray.push(responsiveTextAd.getPath2()
+        .toLowerCase());
+      adCopyArray.push(responsiveTextAd.urls()
+        .getFinalUrl());
+      adCopyArray.push(responsiveTextAd.urls()
+        .getMobileFinalUrl());
+      adCopyArray.push(responsiveTextAd.urls()
+        .getTrackingTemplate());
+      adCopyArray.push(adsObject[adId].AdStrengthInfo);
     }
     
-    // Push adCopyArray to the adsArray of all the ads to return.
+    // Push adCopyArray to the adsArray of all the ads.
     adsArray.push(adCopyArray);
   }
   
+  // Import adsArray into spreadsheet
   importDataToSheet(sheet, adsArray, sheetRow++);
 }
 
-function getSheet() {
+// Returns an ad performance report
+function adPerformanceReport() {
+  var report = AdsApp.report("SELECT CampaignName, AdGroupName, Id, AdStrengthInfo " +
+    "FROM AD_PERFORMANCE_REPORT " +
+    "WHERE AdType = RESPONSIVE_SEARCH_AD ")
+    // Ad a condition if you wish to select only some campaigns
+    // "AND CampaignName CONTAINS 'Paid Search'")
+  return report;
+}
+
+// Iterates through the data in report
+// then stores everything in an object
+function buildAdsObject(report) {
+  var adsIdObject = {};
+  var rows = report.rows();
+  while (rows.hasNext()) {
+    var row = rows.next();
+    var adIdObject = {};
+    adIdObject["CampaignName"] = row["CampaignName"];
+    adIdObject["AdGroupName"] = row["AdGroupName"];
+    adIdObject["AdStrengthInfo"] = row["AdStrengthInfo"];
+    adsIdObject[row["Id"]] = adIdObject;
+  }
+  // console.log(adsIdObject);
+  return adsIdObject;
+}
+
+// Returns a cleared sheet ready for data to be imported
+function getSpreadSheet() {
   var spreadsheet = SpreadsheetApp.openByUrl(SPREADSHEET_URL);
   var sheet = spreadsheet.getSheetByName(SHEET_NAME);
   sheet.clear();
-  
   return sheet;
 }
 
 function importDataToSheet(sheet, adCopy, row) {
-  sheet.getRange(row, 1, adCopy.length, adCopy[0].length).setValues(adCopy);
+  sheet.getRange(row, 1, adCopy.length, adCopy[0].length)
+    .setValues(adCopy);
 }
 
-// Returns the headlines ith position
-function getHeadline(headlines) {
+// Get all adgroups in the account
+function getAdGroups() {
+  var adGroupIterator = AdsApp.adGroups()
+    // Ad a condition if you wish to select only some campaigns
+    // .withCondition("campaign.name REGEXP_MATCH 'Paid Search.*'")
+    .get();
+  return adGroupIterator;
+}
+
+// Returns the text ith position of texts{}
+// Try and get the text
+// If there is no text set text to ""
+function getText(texts) {
   try {
-    var headline = headlines.text;
+    var text = texts.text;
+  } catch {
+    text = "";
   }
-  catch{
-    headline = "";
-  }
-  
-  return headline;
+  return text;
 }
 
-// Returns the position a headline is pinned too
+// Returns the position the text is pinned too
 // Takes one argument, the asset object
-function getPin(headlines) {
+// Try and get the pinned position of the text
+// If there is no pin set pin to "-"
+// If there is no text set pin to ""
+// Strip HEADLINE_ and DESCRIPTION_ from text
+function getPin(text) {
   try {
-    var pin = headlines.pinning;
+    var pin = text.pinning;
     if (pin == null) {
       pin = "-";
+    } else {
+      if (pin.includes("HEADLINE_")) {
+        pin = pin.replace("HEADLINE_", "");
+      } else if (pin.includes("DESCRIPTION_")) {
+        pin = pin.replace("DESCRIPTION_", "");
+      }
     }
-    else {
-      pin = pin.replace("HEADLINE_", "");
-    }
-  }
-  catch {
+  } catch {
     pin = "";
   }
-  
   return pin;
 }
 
-// Returns the position a description is pinned too
-// Takes one argument, the asset object
-function getDescriptionPin(descriptions) {
-  try {
-    var pin = descriptions.pinning;
-    if (pin == null) {
-      pin = "-";
-    }
-    else {
-      pin = pin.replace("DESCRIPTION_", "");
-    }
-  }
-  catch {
-    pin = "";
-  }
-  
-  return pin;
-}
-
-// Returns the description ith position
-function getDescription(descriptions) {
-  try {
-    var description = descriptions.text;
-  }
-  catch{
-    description = "";
-  }
-  
-  return description;
-}
-
-// Returns any labels attached to the ad
+// Returns any labels attached to the ad as a single string
+// Loops through all labels in ad{} and ads them to array
 function getLabel(ad) {
-  return "label";
+  var labels = [];
+  var labelIterator = ad.labels()
+    .get();
+  while (labelIterator.hasNext()) {
+    var labelValue = labelIterator.next();
+    labels.push(labelValue.getName());
+  }
+  return labels.toString();
 }
