@@ -2,7 +2,7 @@
 // 2. Create a copy of the spreadsheet that uses the same email address as your Google Ads account
 // 3. Replace the spreadsheet URL below with your url
 const SPREADSHEET_URL =
-  "https://docs.google.com/spreadsheets/d/1mkQhyk7G7xnus1zBmuQLpDrKQ0qCXJEGG1bmfbZ-1_A/edit#gid=1772883530";
+  "https://docs.google.com/spreadsheets/d/1URcVq4dkh2wUoN5YplFWzJ-JAgKNeTltxZYRnOg5BAs/edit#gid=1772883530";
 
 // Name of sheet to import data
 const SHEET_NAME = "All Ads";
