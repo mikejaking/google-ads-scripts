@@ -1,4 +1,4 @@
-var EMAILS = "mike@known-digital.com"
+var EMAILS = "[Add your email]"
 
 var MAX_TOTALS = 10000;
 
@@ -86,5 +86,5 @@ function pauseCampaigns(selector, type) {
 
 function emailApp(message){
   MailApp.sendEmail(EMAILS, "URGENT GOOGLE ADS OVERSPEND", "Addy "+message+" Campagins Paused for Overspend.");
-  Logger.log("Message to mike@known-digital.com sent.");
+  Logger.log("Message to [Add your email] sent.");
 }
