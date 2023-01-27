@@ -1,0 +1,90 @@
+var EMAILS = "mike@known-digital.com"
+
+var MAX_TOTALS = 10000;
+
+var MAX_SEARCH = 100;
+var MAX_SHOPPING = 0;
+var MAX_VIDEO = 0;
+
+var MONTHLY_SPEND = 0;
+
+var MONTHLY_SEARCH_SPEND = 0;
+var MONTHLY_SHOPPING_SPEND = 0;
+var MONTHLY_VIDEO_SPEND = 0;
+
+function main() {
+  processMonthlySpend();
+  processCampaignPause();
+}
+
+function processMonthlySpend() {
+  //Get Ad Spend
+  MONTHLY_SEARCH_SPEND += getMonthlyCosts(AdsApp.campaigns().get());
+  
+  //Get Video Spend
+  MONTHLY_SHOPPING_SPEND += getMonthlyCosts(AdsApp.shoppingCampaigns().get());
+  
+  //Get shopping Spend
+  MONTHLY_VIDEO_SPEND += getMonthlyCosts(AdsApp.videoCampaigns().get());
+  
+  MONTHLY_SPEND = MONTHLY_SEARCH_SPEND+MONTHLY_SHOPPING_SPEND+MONTHLY_VIDEO_SPEND
+}
+
+function processCampaignPause() {
+  
+  var adsSelector = AdsApp.campaigns().get();
+
+  var videoSelector = AdsApp.videoCampaigns().get();
+      
+  var shoppingSelector = AdsApp.shoppingCampaigns().get();
+  
+  if (MONTHLY_SPEND >= MAX_TOTALS) {
+    //Pause Ads
+    pauseCampaigns(adsSelector, "All");
+    
+    //Pause Videos
+    pauseCampaigns(videoSelector, "All");
+      
+    //Pause Shopping
+    pauseCampaigns(shoppingSelector, "All");
+  }
+  
+  if (MONTHLY_SEARCH_SPEND > MAX_SEARCH) {
+    //Pause Ads
+    pauseCampaigns(adsSelector, "Search");
+  }
+  
+  if (MONTHLY_SHOPPING_SPEND > MAX_SHOPPING) {
+    //Pause Videos
+    pauseCampaigns(shoppingSelector, "Shopping");
+  }
+  
+  if (MONTHLY_VIDEO_SPEND > MAX_VIDEO) {
+    //Pause Shopping
+    pauseCampaigns(videoSelector, "Video");
+  }
+}
+
+function getMonthlyCosts(selector) {
+    var totals = 0;
+    while(selector.hasNext()) {
+        var campaign = selector.next();
+        var stats = campaign.getStatsFor("THIS_MONTH");
+        totals += stats.getCost();
+    }
+      return totals;
+}
+
+function pauseCampaigns(selector, type) {
+  while(selector.hasNext()) {
+    var campaign = selector.next();
+    campaign.pause();
+    }
+    emailApp(type);
+  
+}
+
+function emailApp(message){
+  MailApp.sendEmail(EMAILS, "URGENT GOOGLE ADS OVERSPEND", "Addy "+message+" Campagins Paused for Overspend.");
+  Logger.log("Message to mike@known-digital.com sent.");
+}
