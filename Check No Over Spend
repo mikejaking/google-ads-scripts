@@ -85,6 +85,6 @@ function pauseCampaigns(selector, type) {
 }
 
 function emailApp(message){
-  MailApp.sendEmail(EMAILS, "URGENT GOOGLE ADS OVERSPEND", "Addy "+message+" Campagins Paused for Overspend.");
+  MailApp.sendEmail(EMAILS, "URGENT GOOGLE ADS OVERSPEND", "[ACCOUNT NAME] "+message+" Campagins Paused for Overspend.");
   Logger.log("Message to [Add your email] sent.");
 }
