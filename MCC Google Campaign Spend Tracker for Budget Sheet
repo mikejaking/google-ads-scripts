@@ -1,0 +1,87 @@
+const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/1ajxQ12ysVECVQDWXDW3X8w3U6L29fW6ZIqRS_FQIsf4/edit#gid=1910104186';
+const SHEET_NAME = 'GOOGLE CAMPAIGN SPEND';
+const EMAIL_ADDRESS = "your_email@example.com"; // Replace with your email address
+const START_DATE = "20220101"; // YYYYMMDD format; remove or comment out this line to default to 13 months
+
+function main() {
+  try {
+    const accountIds = ['604-741-8419', '814-027-9665'];
+
+    // Calculate date range once and use it for all accounts
+    let today = new Date();
+    const endDate = Utilities.formatDate(today, AdWordsApp.currentAccount().getTimeZone(), 'yyyyMMdd');
+    let startDate;
+    if (typeof START_DATE !== 'undefined') {
+      startDate = START_DATE;
+    } else {
+      startDate = new Date(today.setMonth(today.getMonth() - 13));
+      startDate = Utilities.formatDate(startDate, AdWordsApp.currentAccount().getTimeZone(), 'yyyyMMdd');
+    }
+
+    MccApp.accounts().withIds(accountIds).executeInParallel('processAccount', 'processResults', JSON.stringify({startDate: startDate, endDate: endDate}));
+
+    // Open the Google Sheet
+    const sheet = SpreadsheetApp.openByUrl(SPREADSHEET_URL).getSheetByName(SHEET_NAME);
+    sheet.clear();
+    const headers = ['AccountId', 'Account', 'Currency', 'Date', 'Campaign', 'Spend'];
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  } catch (error) {
+//     sendErrorEmail("Error in main function", error);
+  }
+}
+
+function processAccount(argsString) {
+  try {
+    let args = JSON.parse(argsString);
+    const currentAccount = AdWordsApp.currentAccount();
+
+    // Fetch the report using the passed dates
+    const report = AdWordsApp.report(
+      'SELECT AccountDescriptiveName, AccountCurrencyCode, CampaignName, Date, Cost ' +
+      'FROM CAMPAIGN_PERFORMANCE_REPORT ' +
+      'WHERE Date >= "' + args.startDate + '" AND Date <= "' + args.endDate + '" ' +
+      'ORDER BY Date ASC'
+    );
+
+    let rows = [];
+    let iterator = report.rows();
+    while (iterator.hasNext()) {
+      let row = iterator.next();
+      rows.push([
+        currentAccount.getCustomerId(),
+        row['AccountDescriptiveName'],
+        row['AccountCurrencyCode'],
+        row['Date'],
+        row['CampaignName'],
+        row['Cost']
+      ]);
+    }
+
+    return JSON.stringify(rows);
+  } catch (error) {
+//     sendErrorEmail("Error in processAccount function", error);
+  }
+}
+
+function processResults(results) {
+  try {
+    let allRows = [];
+
+    for (let i = 0; i < results.length; i++) {
+      let accountRows = JSON.parse(results[i].getReturnValue());
+      allRows = allRows.concat(accountRows);
+    }
+
+    // Open the Google Sheet and write data
+    const sheet = SpreadsheetApp.openByUrl(SPREADSHEET_URL).getSheetByName(SHEET_NAME);
+    sheet.getRange(2, 1, allRows.length, 6).setValues(allRows);
+  } catch (error) {
+//     sendErrorEmail("Error in processResults function", error);
+  }
+}
+
+// function sendErrorEmail(functionName, error) {
+//   const subject = "Google Ads Script Error Notification";
+//   let body = "An error occurred in " + functionName + ".\n\nError details:\n" + error.toString();
+//   MailApp.sendEmail(EMAIL_ADDRESS, subject, body);
+// }
