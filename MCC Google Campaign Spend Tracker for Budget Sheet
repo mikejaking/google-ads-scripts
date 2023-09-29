@@ -1,11 +1,11 @@
-const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/1ajxQ12ysVECVQDWXDW3X8w3U6L29fW6ZIqRS_FQIsf4/edit#gid=1910104186';
-const SHEET_NAME = 'GOOGLE CAMPAIGN SPEND';
+const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/1Oi5676OObBnCmc9u';
+const SHEET_NAME = 'Google Campaign Spend';
 const EMAIL_ADDRESS = "your_email@example.com"; // Replace with your email address
 const START_DATE = "20220101"; // YYYYMMDD format; remove or comment out this line to default to 13 months
 
 function main() {
   try {
-    const accountIds = ['604-741-8419', '814-027-9665'];
+    const accountIds = ['Account-ID-1', 'Account-ID-2'];
 
     // Calculate date range once and use it for all accounts
     let today = new Date();
