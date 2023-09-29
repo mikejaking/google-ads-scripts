@@ -9,6 +9,8 @@ function main() {
 
     // Calculate date range once and use it for all accounts
     let today = new Date();
+    today.setDate(today.getDate() - 1);  // This will set the date to yesterday
+
     const endDate = Utilities.formatDate(today, AdWordsApp.currentAccount().getTimeZone(), 'yyyyMMdd');
     let startDate;
     if (typeof START_DATE !== 'undefined') {
