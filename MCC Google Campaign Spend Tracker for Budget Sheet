@@ -1,16 +1,31 @@
-const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/1Oi5676OObBnCmc9u';
-const SHEET_NAME = 'Google Campaign Spend';
+/*
+Michael Acland King
+01-10-2023
+Version 1
+JavaScript
+
+Description: This script should be added to Google Scripts at the Google Ads MCC level. It will pull down AccountId,
+Account, Currency, Date, Campaign and Spend by date for a specified time.
+
+Users should;
+- Uncomment the sendErrorEmail() function at the bottom;
+- Replace SPREADSHEET_URL with the URL of their spreadsheet.
+- Replace EMAIL_ADDRESS with their email for errors and warning alerts.
+- Replace START_DATE for when the report should pull data.
+
+*/
+
+const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/1ajxQ12ysVECVQDW';
+const SHEET_NAME = 'GOOGLE CAMPAIGN SPEND';
 const EMAIL_ADDRESS = "your_email@example.com"; // Replace with your email address
 const START_DATE = "20220101"; // YYYYMMDD format; remove or comment out this line to default to 13 months
 
 function main() {
   try {
-    const accountIds = ['Account-ID-1', 'Account-ID-2'];
+    const accountIds = ['ACCOUNT_ID_1', 'ACCOUNT_ID_2'];
 
     // Calculate date range once and use it for all accounts
     let today = new Date();
-    today.setDate(today.getDate() - 1);  // This will set the date to yesterday
-
     const endDate = Utilities.formatDate(today, AdWordsApp.currentAccount().getTimeZone(), 'yyyyMMdd');
     let startDate;
     if (typeof START_DATE !== 'undefined') {
